@@ -1,0 +1,22 @@
+# scala
+project/
+target/*
+*.class
+
+# intelij
+.idea/*
+
+*.iml
+*.ipr
+*.iws
+.idea
+out
+
+# vim
+.*.swp
+.*.swo
+*~
+
+# mac
+.DS_Store
+/src/main/scala-2.11/Sandbox.sc

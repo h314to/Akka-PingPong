@@ -1,9 +1,9 @@
 package com.marionete.akka
 
 import scala.concurrent.duration._
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{Actor, ActorSystem, DeadLetter, Props}
 import akka.testkit.{DefaultTimeout, ImplicitSender, TestActorRef, TestKit}
-import org.scalatest.{Matchers, WordSpecLike}
+import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 /**
   * Created by agapito on 19/12/2016.
@@ -12,7 +12,14 @@ class TestPingPong extends TestKit(ActorSystem("TestActorSystem"))
   with Matchers
   with DefaultTimeout
   with ImplicitSender
-  with WordSpecLike {
+  with WordSpecLike
+  with BeforeAndAfterAll {
+
+  override def afterAll(): Unit = {
+    println("done")
+    //system.terminate()
+    TestKit.shutdownActorSystem(system)
+  }
 
 
   "a simple actor" must {
@@ -31,11 +38,31 @@ class TestPingPong extends TestKit(ActorSystem("TestActorSystem"))
         expectMsg(MsgPing("Test"))
       }
     }
+    // "state reaches zero" in {
+    //   ping.underlyingActor.state = 0
+    //   within(1 second) {
+    //     ping ! MsgPing("foo")
+    //     expectMsg(MsgEndGame)
+    //   }
+    // }
+
     "state reaches zero" in {
-      ping.underlyingActor.state = 0
-      within(1 second) {
-        ping ! MsgPing("foo")
-        expectMsg(MsgEndGame)
+      val ping = TestActorRef(new Ping(0))
+      var msgFound:Any = 0
+      system.eventStream.subscribe(system.actorOf(Props(new Actor {
+        def receive = {
+          case _ =>
+            println("I'm here!")
+          //case DeadLetter(msg, from, to) =>
+          //  println(s"Dead letter $msg from $from to $to")
+          //  msgFound = msg
+        }
+      })), classOf[DeadLetter])
+      within(500 millis) {
+        ping ! MsgPing
+        Thread.sleep(300)
+        assert(msgFound == MsgEndGame)
+        //assert(true)
       }
     }
   }

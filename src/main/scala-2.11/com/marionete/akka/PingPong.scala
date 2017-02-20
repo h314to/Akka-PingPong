@@ -8,11 +8,20 @@ import scala.concurrent.duration._
 /**
   * Created by agapito on 19/12/2016.
   */
+
+class SuperPing(n: Int) extends Actor {
+  val ping = context.actorOf(Props(new Ping(n)),name = "ping")
+
+  override def receive = {
+    case _ =>
+  }
+
+}
 class Ping(n: Int) extends Actor {
   var state: Int = n
 
   def receive = {
-    case MsgPing(_) if state == 0 =>
+    case MsgPing(_) if state <= 0 =>
       sender ! MsgEndGame
     case MsgPing(name) =>
       state = state - 1
@@ -20,6 +29,7 @@ class Ping(n: Int) extends Actor {
       sender ! MsgPing(self.path.name)
     case MsgEndGame =>
       context.actorSelection("/user/T800Super/T800") ! MsgEndGame
+      //context.actorSelection("/user/T800Super") ! MsgEndGame
     case MsgStartGame =>
       state = state - 1
       println(s"Game Start, state: $state")
@@ -30,17 +40,17 @@ class Ping(n: Int) extends Actor {
 class GameTerminator extends Actor {
   var state = 1
 
-  override def postRestart(reason: Throwable): Unit = {
-    println("Oh no! John Connor is here!")
-    super.postRestart(reason)
-  }
+  //override def postRestart(reason: Throwable): Unit = {
+  //  println("Oh no! John Connor is here!")
+  //  super.postRestart(reason)
+ //}
 
   def receive = {
     case MsgEndGame =>
-      println(s"Game Over")
-      throw new Exception("you must be foo")
-      println(s"I see dead code... all the time...")
-      //context.system.terminate()
+      //throw new Exception("in GameTerminator")
+      val wrong = 1/0
+      println(s"Game Over (@GameTerminator)")
+      context.system.terminate()
   }
 }
 
